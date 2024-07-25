@@ -1,0 +1,48 @@
+# SEIRS Model Simulation Specific to COVID-19 with Different Levels of Contact Tracing
+
+# Model parameters specific to COVID-19, can be changed to analyze any disease
+beta = 0.2  # Estimated disease transmission rate for COVID-19
+sigma = 1/5.2  # Estimated inverse of incubation period for COVID-19 (5.2 days)
+gamma = 1/10  # Estimated inverse of infectious period for COVID-19 (10 days)
+delta = 1/90  # Estimated inverse of immunity loss period for COVID-19 (90 days)
+
+# Population and initial conditions (assuming a population of 10,000 with 100 initial infected)
+population = 10000  # Total population
+initial_infected = 100  # Initial infected individuals
+initial_exposed = 0  # Initial exposed individuals
+initial_recovered = 0  # Initial recovered individuals
+initial_susceptible = population - initial_infected - initial_exposed - initial_recovered
+
+# Simulation settings
+num_days = 180  # Simulate for 6 months (180 days)
+
+# Define different levels of contact tracing
+contact_tracing_levels = {'No Tracing': 0.0, 'Low Tracing': 0.2, 'Medium Tracing': 0.5, 'High Tracing': 0.8}
+
+# Run simulations for each level of contact tracing
+for level, contact_tracing_rate in contact_tracing_levels.items():
+    # Initialize compartments
+    S, E, I, R, S_prime = [initial_susceptible], [initial_exposed], [initial_infected], [initial_recovered], [0]
+
+    # Simulation loop with contact tracing
+    for day in range(num_days):
+        dS = -beta * S[-1] * I[-1] / population
+        dE = (beta * S[-1] * I[-1] / population) - (sigma * E[-1])
+        dI = sigma * E[-1] - gamma * I[-1]
+        dR = gamma * I[-1] - delta * R[-1]
+        dS_prime = delta * R[-1]
+
+        # Apply contact tracing
+        dI *= (1 - contact_tracing_rate)
+
+        S.append(S[-1] + dS - dS_prime)
+        E.append(E[-1] + dE)
+        I.append(I[-1] + dI)
+        R.append(R[-1] + dR)
+        S_prime.append(S_prime[-1] + dS_prime)
+
+    # Print the results for each level of contact tracing
+    print(f"\nResults for {level} (Contact Tracing Rate: {contact_tracing_rate}):")
+    for day, s, e, i, r, sp in zip(range(num_days + 1), S, E, I, R, S_prime):
+        print(f"Day {day}: Susceptible={s:.2f}, Exposed={e:.2f}, Infectious={i:.2f}, Recovered={r:.2f}, "
+              f"Susceptible (Immune Loss)={sp:.2f}")
